@@ -1,27 +1,57 @@
 $(function () {
   let $result = $('.result');
-  const CancelToken = axios.CancelToken;
-
   let pending = {};
+  
+  
   $('.req1').click(e => {
-    const source = CancelToken.source();
-    if(pending['/api/req1']) pending['/api/req1'].cancel('user cancel');
-    pending['/api/req1'] = source;
-    axios.get('/api/req1', {cancelToken: source.token})
+    requestCancelable({url: '/api/req1', method: 'get'})
       .then(response => {
-        delete pending['/api/req1'];
         $result.append('<div>req1 done</div>');
-      }).catch(err=>{})
+      })
+      .catch(err => {
+        $result.append('<div>req1 err</div>');
+      });
+    requestCancelable({url: '/api/req2', method: 'get'})
+      .then(response => {
+        $result.append('<div>req2 done</div>');
+      })
+      .catch(err => {
+        $result.append('<div>req2 err</div>');
+      })
   });
   $('.req2').click(e => {
-    const source = CancelToken.source();
-    if(pending['/api/req2']) pending['/api/req2'].cancel('user cancel');
-    pending['/api/req2'] = source;
-    axios.get('/api/req2', {cancelToken: source.token})
+    requestCancelable({url: '/api/req1', method: 'get'})
       .then(response => {
-        delete pending['/api/req2'];
+        $result.append('<div>req1 done</div>');
+      })
+      .catch(err => {
+        $result.append('<div>req1 err</div>');
+      });
+    requestCancelable({url: '/api/req2', method: 'get'})
+      .then(response => {
         $result.append('<div>req2 done</div>');
-      }).catch(err=>{})
-  })
-
+      })
+      .catch(err => {
+        $result.append('<div>req2 err</div>');
+      })
+  });
+  
+  function requestCancelable(options) {
+    const CancelToken = axios.CancelToken;
+    const source = CancelToken.source();
+    let url = options.url;
+    if (pending[url]) pending[url].cancel('user cancel');
+    pending[url] = source;
+    options.cancelToken = source.token;
+    
+    return new Promise((resolve, reject) => {
+      axios(options).then(resp => {
+        delete pending[url];
+        resolve(resp)
+      }).catch(err => reject(err))
+    })
+    
+  }
 });
+
+
